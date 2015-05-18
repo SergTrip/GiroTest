@@ -2,6 +2,9 @@
 #define GIROTESTWIDGET_H
 
 #include <QWidget>
+#include <QGLViewer/qglviewer.h>
+#include <QGLViewer/manipulatedFrame.h>
+#include <QGLViewer/quaternion.h>
 
 #include "girodatareciever.h"
 
@@ -18,7 +21,10 @@ public:
     ~GiroTestWidget();
 
 public slots:
-  void draw();
+    // Слот перерисовки виджета
+    void draw();
+    // Слот обновления положения
+    void    newGiroDataSlot( qint16 x, qint16 y, qint16 z);
 
 private:
     Ui::GiroTestWidget *ui;

@@ -6,32 +6,78 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
-    <height>402</height>
+    <width>631</width>
+    <height>451</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>GiroTestWidget</string>
   </property>
-  <widget class="QComboBox" name="comboBox">
+  <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>151</width>
-     <height>22</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QGLViewer" name="m_oGlViewer">
-   <property name="geometry">
-    <rect>
-     <x>179</x>
+     <x>9</x>
      <y>9</y>
-     <width>411</width>
-     <height>371</height>
+     <width>602</width>
+     <height>430</height>
     </rect>
    </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QGLViewer" name="m_oGlViewer"/>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLabel" name="labelDataX">
+        <property name="text">
+         <string>X: undefine</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="labelDataY">
+        <property name="text">
+         <string>Y: undegine</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="labelDataZ">
+        <property name="text">
+         <string>Z: undefine</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>

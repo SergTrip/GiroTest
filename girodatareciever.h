@@ -64,6 +64,10 @@ protected slots:
     // Слот приема данных
     void recieveDataSlot();
 
+signals:
+    // Сообщение о формировании новых данных
+    void    newGiroDataSignal( qint16 x, qint16 y, qint16 z);
+
 };
 
 #endif // GIRODATARECIEVER_H

@@ -94,6 +94,7 @@ void GiroDataReciever::recieveDataSlot()
     {
         // Формируем полученную структуру
         m_structLastPackedge = *(dataPackageStruct*)m_oRecieveBuffer.data();
+
         qDebug() << "Marker = " << QString::number( m_structLastPackedge.marker, 16 );
         qDebug() << "X = " << m_structLastPackedge.x << "; Y = " << m_structLastPackedge.y << "; Z = " << m_structLastPackedge.z;
 
@@ -110,11 +111,14 @@ void GiroDataReciever::recieveDataSlot()
                 m_eRecieverState = Connected;
             }
         }
-
+        // Удалить обработанные элементы
         m_oRecieveBuffer.remove( 0, 8 );
     }
 
     // Опубликовать последние данные
+    emit newGiroDataSignal( m_structLastPackedge.x,
+                            m_structLastPackedge.y,
+                            m_structLastPackedge.z   );
 
     // m_oRecieveBuffer.clear();
 }
