@@ -5,6 +5,7 @@
 #include <QGLViewer/qglviewer.h>
 #include <QGLViewer/manipulatedFrame.h>
 #include <QGLViewer/quaternion.h>
+#include <QVector3D>
 
 #include "girodatareciever.h"
 
@@ -21,6 +22,8 @@ public:
     ~GiroTestWidget();
 
 public slots:
+    // Слот инициализации виджета
+    void glViewerWidgetInitSlot();
     // Слот перерисовки виджета
     void draw();
     // Слот обновления положения
@@ -31,6 +34,9 @@ private:
 
     // Класс связи с устройством
     GiroDataReciever m_oGiroData;
+
+    // Текущие значения гироскопа
+    QVector3D   m_vGiroData;
 };
 
 #endif // GIROTESTWIDGET_H

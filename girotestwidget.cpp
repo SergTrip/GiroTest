@@ -9,6 +9,8 @@ GiroTestWidget::GiroTestWidget(QWidget *parent) :
 
     // Connect the viewer signal to our draw slot.
     connect( ui->m_oGlViewer, SIGNAL(drawNeeded()), this, SLOT(draw()));
+    // Connect the viewer signal to our init slot.
+    connect( ui->m_oGlViewer, SIGNAL(viewerInitialized ()), this, SLOT(glViewerWidgetInitSlot()));
 
     // Подключакм слот обновления данных
     connect( &m_oGiroData, SIGNAL(newGiroDataSignal (qint16,qint16,qint16)),
@@ -20,8 +22,36 @@ GiroTestWidget::~GiroTestWidget()
     delete ui;
 }
 
+void GiroTestWidget::glViewerWidgetInitSlot()
+{
+    // Включить изображение осей
+    ui->m_oGlViewer->setAxisIsDrawn();
+
+    ui->m_oGlViewer->setFPSIsDisplayed();
+
+    ui->m_oGlViewer->setGridIsDrawn();
+
+    ui->m_oGlViewer->setTextIsEnabled();
+
+    ui->m_oGlViewer->setManipulatedFrame(new qglviewer::ManipulatedFrame());
+
+
+}
+
 void GiroTestWidget::draw()
 {
+    // Попрбовать вывести текст
+    ui->m_oGlViewer->drawText(20, 40, "X: " + QString::number(m_vGiroData.x()) + " mG" );
+    ui->m_oGlViewer->drawText(20, 50, "Y: " + QString::number(m_vGiroData.y()) + " mG" );
+    ui->m_oGlViewer->drawText(20, 60, "Z: " + QString::number(m_vGiroData.z()) + " mG" );
+
+    // Получаем указатель на фрейм
+    qglviewer::ManipulatedFrame* frame = ui->m_oGlViewer->manipulatedFrame();
+
+    qglviewer::Quaternion quat( qglviewer::Vec(0, 0.5, 0), 0 );
+    // Пробуем его вращать
+    frame->setOrientation ( quat );
+
     const float nbSteps = 200.0;
     glBegin(GL_QUAD_STRIP);
     for (float i=0; i<nbSteps; ++i)
@@ -51,10 +81,16 @@ void GiroTestWidget::newGiroDataSlot(qint16 x, qint16 y, qint16 z)
     ui->labelDataY->setText( "Y: " + QString::number(y) + " mG" );
     ui->labelDataZ->setText( "Z: " + QString::number(z) + " mG" );
 
+    m_vGiroData.setX(x);
+    m_vGiroData.setY(y);
+    m_vGiroData.setZ(z);
+
     // Получаем указатель на фрейм
     qglviewer::ManipulatedFrame* frame = ui->m_oGlViewer->manipulatedFrame();
 
     qglviewer::Quaternion quat( qglviewer::Vec(x, y, z), 0 );
+
+    ui->m_oGlViewer->update();
 
     // Пробуем его вращать
     // frame->setOrientation ( quat );
