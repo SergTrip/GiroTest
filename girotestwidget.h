@@ -37,6 +37,7 @@ private:
 
     // Текущие значения гироскопа
     QVector3D   m_vGiroData;
+    void drawSpiral();
 };
 
 #endif // GIROTESTWIDGET_H
