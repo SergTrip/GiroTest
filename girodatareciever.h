@@ -48,9 +48,15 @@ private:
     typedef struct
     {
         quint16 marker; // маркерпакета
+
+        qint16  w;
         qint16  x;
         qint16  y;
         qint16  z;
+
+        qint16  accelX;
+        qint16  accelY;
+        qint16  accelZ;
 
     }dataPackageStruct;
 
@@ -66,7 +72,9 @@ protected slots:
 
 signals:
     // Сообщение о формировании новых данных
-    void    newGiroDataSignal( qint16 x, qint16 y, qint16 z);
+    void    newGiroDataSignal( qreal x, qreal y, qreal z, qreal w);
+
+    void    newAccelDataSignal( qint16 x, qint16 y, qint16 z );
 
 };
 

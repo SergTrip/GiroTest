@@ -2,7 +2,8 @@
 #include "ui_girotestwidget.h"
 
 GiroTestWidget::GiroTestWidget(QWidget *parent) :
-    QWidget(parent),
+    QWidget         ( parent    ),
+    m_oFaceDetector ( this->parentWidget() ),
     ui(new Ui::GiroTestWidget)
 {
     ui->setupUi(this);
@@ -13,12 +14,31 @@ GiroTestWidget::GiroTestWidget(QWidget *parent) :
     connect( ui->m_oGlViewer, SIGNAL(viewerInitialized ()), this, SLOT(glViewerWidgetInitSlot()));
 
     // Подключакм слот обновления данных
-    connect( &m_oGiroData, SIGNAL(newGiroDataSignal (qint16,qint16,qint16)),
-             this,          SLOT (newGiroDataSlot   (qint16,qint16,qint16)) );
+    connect( &m_oGiroData, SIGNAL(newGiroDataSignal (qreal,qreal,qreal,qreal)),
+             this,          SLOT (newGiroDataSlot   (qreal,qreal,qreal,qreal))  );
+    // Подключакм слот обновления данных
+    connect( &m_oGiroData, SIGNAL(newAccelDataSignal (qint16,qint16,qint16) ),
+             this,          SLOT (newAccelDataSignal (qint16,qint16,qint16) )   );
+
+    // Ширина основания
+    m_nCameraWidth      = 640.0f / ( 2.0f * 640.0f );
+    // Высота основания
+    m_nCameraHigth      = 480.0f / ( 2.0f * 640.0f );
+    // Расстояние до плоскости
+    m_CameraDistance    = 1.5f;
+
+    // Установить время
+    m_oFaceDetector.setTime( 20 );
+    // Запустить
+    m_oFaceDetector.startTimer();
+    // Показать диалог
+    m_oFaceDetector.show();
 }
 
 GiroTestWidget::~GiroTestWidget()
 {
+    m_oFaceDetector.close();
+
     delete ui;
 }
 
@@ -26,13 +46,13 @@ void GiroTestWidget::glViewerWidgetInitSlot()
 {
     // Включить изображение осей
     // ui->m_oGlViewer->setAxisIsDrawn();
-
+    // Вывести FPS
     ui->m_oGlViewer->setFPSIsDisplayed();
-
+    // Рисовать сетку
     ui->m_oGlViewer->setGridIsDrawn();
-
+    // Разрешить вывод текста
     ui->m_oGlViewer->setTextIsEnabled();
-
+    // Добавить управляемый фрейм
     ui->m_oGlViewer->setManipulatedFrame(new qglviewer::ManipulatedFrame());
 
 #ifdef GL_RESCALE_NORMAL  // OpenGL 1.2 Only...
@@ -49,16 +69,35 @@ void GiroTestWidget::glViewerWidgetInitSlot()
   // to specify: new qglviewer::ManipulatedFrame().
   ui->m_oGlViewer->setManipulatedFrame(new qglviewer::ManipulatedFrame());
 
+  // Подготовка к выводу текстур
+  glShadeModel  ( GL_FLAT       );
+  glEnable      ( GL_DEPTH_TEST );
+
+  glPixelStorei ( GL_UNPACK_ALIGNMENT, 1 );
+
+  glGenTextures ( 1, &m_uTexture );
+
+  glBindTexture ( GL_TEXTURE_2D, m_uTexture );
+
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,        GL_REPEAT   );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,        GL_REPEAT   );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,    GL_NEAREST  );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,    GL_NEAREST  );
 }
 
 void GiroTestWidget::draw()
 {
     // Попрбовать вывести текст
-    ui->m_oGlViewer->drawText(20, 40, "X: " + QString::number(m_vGiroData.x()) + " mG" );
-    ui->m_oGlViewer->drawText(20, 50, "Y: " + QString::number(m_vGiroData.y()) + " mG" );
-    ui->m_oGlViewer->drawText(20, 60, "Z: " + QString::number(m_vGiroData.z()) + " mG" );
+    ui->m_oGlViewer->drawText(20, 40, "X: " + QString::number(m_vGiroData.x()) );
+    ui->m_oGlViewer->drawText(20, 50, "Y: " + QString::number(m_vGiroData.y()) );
+    ui->m_oGlViewer->drawText(20, 60, "Z: " + QString::number(m_vGiroData.z()) );
+    ui->m_oGlViewer->drawText(20, 70, "W: " + QString::number(m_vGiroData.w()) );
 
-    ui->m_oGlViewer->drawAxis();
+    ui->m_oGlViewer->drawText(20, 100, "Accel X: " + QString::number(m_vAccelData.x()) + " m/s^2 " );
+    ui->m_oGlViewer->drawText(20, 110, "Accel Y: " + QString::number(m_vAccelData.y()) + " m/s^2 " );
+    ui->m_oGlViewer->drawText(20, 120, "Accel Z: " + QString::number(m_vAccelData.z()) + " m/s^2 " );
+
+    //ui->m_oGlViewer->drawAxis();
 
     // Save the current model view matrix (not needed here in fact)
     glPushMatrix();
@@ -66,29 +105,39 @@ void GiroTestWidget::draw()
     // Multiply matrix to get in the frame coordinate system.
     glMultMatrixd(ui->m_oGlViewer->manipulatedFrame()->matrix());
 
-    qglviewer::Quaternion quat( qglviewer::Vec(m_vGiroData.x(), m_vGiroData.z(), m_vGiroData.y()), 90 );
+    qglviewer::Quaternion quat( m_vGiroData.x(),
+                                m_vGiroData.y(),
+                                m_vGiroData.z(),
+                                m_vGiroData.w()     );
     // Пробуем его вращать
     ui->m_oGlViewer->manipulatedFrame()->setOrientation ( quat );
 
-    drawSpiral();
+    // Вывести оси
+    ui->m_oGlViewer->drawAxis();
+
+    // Отбразить данные камеры
+    drawTexture();
+    // Нарисовать камеру
+    drawCamera();
+
+    //drawSpiral();
 
     // Restore the original (world) coordinate system
     glPopMatrix();
 
 }
 
-void GiroTestWidget::newGiroDataSlot(qint16 x, qint16 y, qint16 z)
+void GiroTestWidget::newGiroDataSlot(qreal x, qreal y, qreal z, qreal w)
 {
     // Выводим данные в диалог
-    ui->labelDataX->setText( "X: " + QString::number(x) + " mG" );
-    ui->labelDataY->setText( "Y: " + QString::number(y) + " mG" );
-    ui->labelDataZ->setText( "Z: " + QString::number(z) + " mG" );
+    ui->labelDataX->setText( "X: " + QString::number(x) );
+    ui->labelDataY->setText( "Y: " + QString::number(y) );
+    ui->labelDataZ->setText( "Z: " + QString::number(z) );
+    //ui->labelDataW->setText( "W: " + QString::number(w) );
 
-    m_vGiroData.setX(x);
-    m_vGiroData.setY(y);
-    m_vGiroData.setZ(z);
+    m_vGiroData = QVector4D( x, y, z, w );
 
-    m_vGiroData.normalize();
+    //m_vGiroData.normalize();
 
     // Получаем указатель на фрейм
     //qglviewer::ManipulatedFrame* frame = ui->m_oGlViewer->manipulatedFrame();
@@ -98,7 +147,12 @@ void GiroTestWidget::newGiroDataSlot(qint16 x, qint16 y, qint16 z)
     ui->m_oGlViewer->update();
 
     // Пробуем его вращать
-    ///frame->setOrientation ( quat );
+    //frame->setOrientation ( quat );
+}
+
+void GiroTestWidget::newAccelDataSignal(qint16 x, qint16 y, qint16 z)
+{
+    m_vAccelData = QVector3D(x, y, z );
 }
 
 void GiroTestWidget::drawSpiral()
@@ -122,4 +176,74 @@ void GiroTestWidget::drawSpiral()
       glVertex3f(r2*c, alt+0.05, r2*s);
     }
   glEnd();
+}
+
+void GiroTestWidget::drawCamera()
+{
+    // Вектор для хранения цвета
+    GLfloat color[4];
+
+    // Установить режим отображения
+    // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    glPolygonMode( GL_FRONT,    GL_LINE );
+    glPolygonMode( GL_BACK,     GL_LINE );
+
+    // Поменять толщину линий
+    glLineWidth( 2.0f );
+
+    glBegin( GL_TRIANGLE_FAN );
+
+    // Получить текущий цвет
+    glGetFloatv( GL_CURRENT_COLOR, color );
+
+    // Установить свой цвет
+    glColor3f( 1.0f, 0.0f , 0.0f );
+
+    // glNormal3f(nor*c, up, nor*s);
+    glVertex3f(  0.0f,  0.0f, 0.0f );
+    glVertex3f(  m_nCameraWidth,  m_nCameraHigth, m_CameraDistance);
+    glVertex3f(  m_nCameraWidth, -m_nCameraHigth, m_CameraDistance);
+    glVertex3f( -m_nCameraWidth, -m_nCameraHigth, m_CameraDistance);
+    glVertex3f( -m_nCameraWidth,  m_nCameraHigth, m_CameraDistance);
+    glVertex3f(  m_nCameraWidth,  m_nCameraHigth, m_CameraDistance);
+
+    // Вернуть цвет
+    glColor3f( color[0], color[1], color[2]);
+
+    glEnd();
+
+    // Вернуть режим отображения
+    //glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    glPolygonMode( GL_FRONT,    GL_FILL );
+    glPolygonMode( GL_BACK,     GL_FILL );
+
+}
+
+void GiroTestWidget::drawTexture()
+{
+    QImage texture;
+    texture = m_oFaceDetector.getImage();
+
+    // Обновить текстуру
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, texture.width(), texture.height(), 0, GL_RGBA,
+                  GL_UNSIGNED_BYTE, texture.bits()  );
+
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+    glEnable    ( GL_TEXTURE_2D );
+    glTexEnvf   ( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
+
+    glBindTexture ( GL_TEXTURE_2D, m_uTexture );
+
+    glBegin( GL_QUADS );
+
+    glTexCoord2f( 0.0, 0.0);    glVertex3f(  m_nCameraWidth,  m_nCameraHigth, m_CameraDistance);
+    glTexCoord2f( 0.0, 1.0);    glVertex3f(  m_nCameraWidth, -m_nCameraHigth, m_CameraDistance);
+    glTexCoord2f( 1.0, 1.0);    glVertex3f( -m_nCameraWidth, -m_nCameraHigth, m_CameraDistance);
+    glTexCoord2f( 1.0, 0.0);    glVertex3f( -m_nCameraWidth,  m_nCameraHigth, m_CameraDistance);
+
+    glEnd();
+
+    glFlush();
+    glDisable( GL_TEXTURE_2D );
 }

@@ -6,8 +6,11 @@
 #include <QGLViewer/manipulatedFrame.h>
 #include <QGLViewer/quaternion.h>
 #include <QVector3D>
+#include <QQuaternion>
 
 #include "girodatareciever.h"
+
+#include "facerecognizer.h"
 
 namespace Ui {
 class GiroTestWidget;
@@ -26,8 +29,11 @@ public slots:
     void glViewerWidgetInitSlot();
     // Слот перерисовки виджета
     void draw();
+
     // Слот обновления положения
-    void    newGiroDataSlot( qint16 x, qint16 y, qint16 z);
+    void    newGiroDataSlot( qreal x, qreal y, qreal z, qreal w);
+
+    void    newAccelDataSignal( qint16 x, qint16 y, qint16 z );
 
 private:
     Ui::GiroTestWidget *ui;
@@ -36,8 +42,36 @@ private:
     GiroDataReciever m_oGiroData;
 
     // Текущие значения гироскопа
-    QVector3D   m_vGiroData;
+    // QQuaternion m_vGiroData;
+    QVector4D m_vGiroData;
+
+    QVector3D m_vAccelData;
+
+    // Угол квантерниона
+    //double      m_nAngle;
+
+    // Рисует тестовую спираль
     void drawSpiral();
+
+    // Рисуем камеру
+    void drawCamera();
+
+    // Рисуем текстуру
+    void drawTexture();
+
+    // Описатель текстуры
+    GLuint  m_uTexture;
+
+    // Ширина основания
+    GLfloat m_nCameraWidth;
+    // Высота основания
+    GLfloat m_nCameraHigth;
+    // Расстояние до плоскости
+    GLfloat m_CameraDistance;
+
+private:
+    // Создать экземпляр класса захвата камеры
+    FaceRecognizer  m_oFaceDetector;
 };
 
 #endif // GIROTESTWIDGET_H

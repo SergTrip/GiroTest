@@ -71,6 +71,15 @@ void GiroDataReciever::stateTimeOutSlot()
     case Connected:
         // Проверить соединение ???
         qDebug() << " Синхронизировано";
+
+        if( !this->open(QIODevice::ReadWrite))
+        {
+            // Поемнять состояние
+            m_eRecieverState = Disconnected;
+
+            m_bDataDtreamSync   = false;
+            m_nPackageCounter   = 0;
+        }
         break;
 
     default:
@@ -82,6 +91,10 @@ void GiroDataReciever::stateTimeOutSlot()
 
 void GiroDataReciever::recieveDataSlot()
 {
+    qreal x,y,z,w;
+
+    qint16 AccelX, AccelY, AccelZ;
+
     // Вычитать буфер
     QByteArray tempBuffer = readAll();
     qDebug() << "Сервер: Приняты байты...";
@@ -90,14 +103,29 @@ void GiroDataReciever::recieveDataSlot()
     m_oRecieveBuffer.append( tempBuffer );
 
     // Пока длинна буфера больше 2
-    while( m_oRecieveBuffer.size() >= 8 )
+    while( m_oRecieveBuffer.size() >= (8*2) )
     {
         // Формируем полученную структуру
         m_structLastPackedge = *(dataPackageStruct*)m_oRecieveBuffer.data();
 
-        qDebug() << "Marker = " << QString::number( m_structLastPackedge.marker, 16 );
-        qDebug() << "X = " << m_structLastPackedge.x << "; Y = " << m_structLastPackedge.y << "; Z = " << m_structLastPackedge.z;
+        x = m_structLastPackedge.x/16384.0;
+        y = m_structLastPackedge.y/16384.0;
+        z = m_structLastPackedge.z/16384.0;
+        w = m_structLastPackedge.w/16384.0;
 
+        AccelX = m_structLastPackedge.accelX;
+        AccelY = m_structLastPackedge.accelY;
+        AccelZ = m_structLastPackedge.accelZ;
+
+        qDebug() << "Marker = " << QString::number( m_structLastPackedge.marker, 16 );
+        qDebug() << "X = "      << x   <<  \
+                    "; Y = "    << y   <<  \
+                    "; Z = "    << z   <<  \
+                    "; W = "    << w   ;
+
+        qDebug() << " Accel X = "     << AccelX   <<  \
+                    "; Accel Y = "    << AccelY   <<  \
+                    "; Accel Z = "    << AccelZ   ;
         // Если они не равны маркеру
         if( (m_structLastPackedge.marker == 0x00AA) && !m_bDataDtreamSync )
         {
@@ -112,13 +140,13 @@ void GiroDataReciever::recieveDataSlot()
             }
         }
         // Удалить обработанные элементы
-        m_oRecieveBuffer.remove( 0, 8 );
+        m_oRecieveBuffer.remove( 0, (8*2) );
     }
 
     // Опубликовать последние данные
-    emit newGiroDataSignal( m_structLastPackedge.x,
-                            m_structLastPackedge.y,
-                            m_structLastPackedge.z   );
+    emit newGiroDataSignal ( x, y, z, w );
+
+    emit newAccelDataSignal( AccelX, AccelY, AccelZ );
 
     // m_oRecieveBuffer.clear();
 }
