@@ -13,10 +13,12 @@ TEMPLATE = app
 
 SOURCES +=  main.cpp                \
             girotestwidget.cpp      \
-            girodatareciever.cpp
+            girodatareciever.cpp \
+    imudata.cpp
 
 HEADERS  += girotestwidget.h        \
-            girodatareciever.h
+            girodatareciever.h \
+    imudata.h
 
 FORMS    += girotestwidget.ui
 
@@ -64,7 +66,21 @@ INCLUDEPATH += $$LIB_QGLVIEWER_INCLUDEPATH
 message( $$LIB_QGLVIEWER_INCLUDEPATH )
 
 win32 {
-    # FACE_RECOGNIZER_PATH =
+    FACE_RECOGNIZER_PATH = D:/MyPROG/LSD_SLAM/Qt/FaceDetectorDll
+
+    CONFIG ( release, debug | release   ){
+        message( " Linux - FaceDetectorDll - Release " )
+        LIBS    += -L$$FACE_RECOGNIZER_PATH/build/Release -lFaceDetectorDll
+
+        message( $$LIBS )
+    }
+
+    CONFIG ( debug , debug | release   ){
+        message( " Linux -FaceDetectorDll - Debug " )
+        LIBS    += -L$$FACE_RECOGNIZER_PATH/build/Debug -lFaceDetectorDlld
+
+        message( $$LIBS )
+    }
 }
 unix{
     FACE_RECOGNIZER_PATH = /home/sergey/MyProjects/Camera/Qt/FaceDetectorDll
@@ -89,11 +105,33 @@ INCLUDEPATH += $$FACE_RECOGNIZER_PATH
 # Если операционная система Windows
 win32 {
     # Путь к корню .h файлов
-    OPENCV_INCLUDE_PATH         = D:/Qt/opencv3/OpenCV_Git/include
-    OPENCV_INCLUDE_MODULE_PATH  = D:/Qt/opencv3/OpenCV_Git/modules
+    OPENCV_INCLUDE_PATH         = D:/Qt/OpenCVLibs/opencv3/OpenCV_Git/include
+    OPENCV_INCLUDE_MODULE_PATH  = D:/Qt/OpenCVLibs/opencv3/OpenCV_Git/modules
+
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/core/include
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/legacy/include
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/contrib/include
+
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/imgproc/include
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/imgcodecs/include
+
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/photo/include
+
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/video/include
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/videoio/include
+
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/objdetect/include
+
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/highgui/include
+
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/features2d/include
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/calib3d/include
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/ml/include
+
+    INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH/flann/include
 
     # Путь к библиотекам
-    OPENCV_LIBS_PATH            = D:/Qt/opencv3/OpenCV_Git_Make/lib
+    OPENCV_LIBS_PATH            = D:/Qt/OpenCVLibs/opencv3/OpenCV_Git_Make/lib
 
     CONFIG (  release, debug | release    ) {
 
@@ -120,7 +158,7 @@ win32 {
 unix {
     # Путь к корню .h файлов
     OPENCV_INCLUDE_PATH        =  /home/sergey/Libs/opencv/include
-#        OPENCV_INCLUDE_MODULE_PATH =  /home/sergey/Libs/opencv/modules
+    OPENCV_INCLUDE_MODULE_PATH =  /home/sergey/Libs/opencv/modules
 
     # Путь к библиотекам
     OPENCV_LIBS_PATH           = /home/sergey/Libs/opencv/build_release/lib
@@ -146,7 +184,9 @@ unix {
     }
 }
 
-
 message( $$OPENCV_INCLUDE_PATH )
+INCLUDEPATH += $$OPENCV_INCLUDE_PATH
+
 message( $$OPENCV_INCLUDE_MODULE_PATH )
+INCLUDEPATH += $$OPENCV_INCLUDE_MODULE_PATH
 

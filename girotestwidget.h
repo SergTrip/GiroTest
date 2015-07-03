@@ -16,6 +16,8 @@ namespace Ui {
 class GiroTestWidget;
 }
 
+using namespace LsdSlamIMU;
+
 class GiroTestWidget : public QWidget
 {
     Q_OBJECT
@@ -31,15 +33,15 @@ public slots:
     void draw();
 
     // Слот обновления положения
-    void    newGiroDataSlot( qreal x, qreal y, qreal z, qreal w);
+    void    newGiroDataSlot     ( qreal x, qreal y, qreal z, qreal w);
 
-    void    newAccelDataSignal( qint16 x, qint16 y, qint16 z );
+    void    newAccelDataSignal  ( qint16 x, qint16 y, qint16 z );
 
 private:
     Ui::GiroTestWidget *ui;
 
     // Класс связи с устройством
-    GiroDataReciever m_oGiroData;
+    IMUDataReciever m_oGiroData;
 
     // Текущие значения гироскопа
     // QQuaternion m_vGiroData;

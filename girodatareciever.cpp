@@ -1,11 +1,16 @@
 #include "girodatareciever.h"
 
-GiroDataReciever::GiroDataReciever() :
+namespace LsdSlamIMU
+{
+
+IMUDataReciever::IMUDataReciever() :
     m_eRecieverState    ( Disconnected  ),
-    m_bDataDtreamSync   ( false         )
+    m_bDataStreamSync   ( false         )
 {
     // Сбросить  структур
     // m_structLastPackedge;
+
+    quint16 size = sizeof( dataPackageStruct );
 
     // Подключить таймер к слоту
     connect( &m_oStateTimer, SIGNAL(timeout()), this, SLOT(stateTimeOutSlot()));
@@ -18,13 +23,13 @@ GiroDataReciever::GiroDataReciever() :
     m_oStateTimer.start( GIRO_DATA_STATE_TIME );
 }
 
-GiroDataReciever::~GiroDataReciever()
+IMUDataReciever::~IMUDataReciever()
 {
     // Отключиться
     this->close();
 }
 
-void GiroDataReciever::stateTimeOutSlot()
+void IMUDataReciever::stateTimeOutSlot()
 {
     // Проверить состояние
     switch( m_eRecieverState )
@@ -77,7 +82,7 @@ void GiroDataReciever::stateTimeOutSlot()
             // Поемнять состояние
             m_eRecieverState = Disconnected;
 
-            m_bDataDtreamSync   = false;
+            m_bDataStreamSync   = false;
             m_nPackageCounter   = 0;
         }
         break;
@@ -89,12 +94,8 @@ void GiroDataReciever::stateTimeOutSlot()
     }
 }
 
-void GiroDataReciever::recieveDataSlot()
+void IMUDataReciever::recieveDataSlot()
 {
-    qreal x,y,z,w;
-
-    qint16 AccelX, AccelY, AccelZ;
-
     // Вычитать буфер
     QByteArray tempBuffer = readAll();
     qDebug() << "Сервер: Приняты байты...";
@@ -103,51 +104,52 @@ void GiroDataReciever::recieveDataSlot()
     m_oRecieveBuffer.append( tempBuffer );
 
     // Пока длинна буфера больше 2
-    while( m_oRecieveBuffer.size() >= (8*2) )
+    while( m_oRecieveBuffer.size() >= sizeof(m_structLastPackedge) )
     {
         // Формируем полученную структуру
         m_structLastPackedge = *(dataPackageStruct*)m_oRecieveBuffer.data();
 
-        x = m_structLastPackedge.x/16384.0;
-        y = m_structLastPackedge.y/16384.0;
-        z = m_structLastPackedge.z/16384.0;
-        w = m_structLastPackedge.w/16384.0;
+//        x = m_structLastPackedge.x/16384.0;
+//        y = m_structLastPackedge.y/16384.0;
+//        z = m_structLastPackedge.z/16384.0;
+//        w = m_structLastPackedge.w/16384.0;
 
-        AccelX = m_structLastPackedge.accelX;
-        AccelY = m_structLastPackedge.accelY;
-        AccelZ = m_structLastPackedge.accelZ;
+//        AccelX = m_structLastPackedge.accelX;
+//        AccelY = m_structLastPackedge.accelY;
+//        AccelZ = m_structLastPackedge.accelZ;
+
+        //m_oIMUdata.
 
         qDebug() << "Marker = " << QString::number( m_structLastPackedge.marker, 16 );
-        qDebug() << "X = "      << x   <<  \
-                    "; Y = "    << y   <<  \
-                    "; Z = "    << z   <<  \
-                    "; W = "    << w   ;
+        qDebug() <<   " Quaternion X = "   << m_structLastPackedge.qua.x   << ";" << "/n" \
+                      " Quaternion Y = "   << m_structLastPackedge.qua.y   << ";" << "/n" \
+                      " Quaternion Z = "   << m_structLastPackedge.qua.z   << ";" << "/n" \
+                      " Quaternion W = "   << m_structLastPackedge.qua.w   << ";" << "/n" ;
 
-        qDebug() << " Accel X = "     << AccelX   <<  \
-                    "; Accel Y = "    << AccelY   <<  \
-                    "; Accel Z = "    << AccelZ   ;
+        qDebug() << " Position X = "   << m_structLastPackedge.pos.x   << "mm;" << "/n" \
+                    " Position Y = "   << m_structLastPackedge.pos.y   << "mm;" << "/n" \
+                    " Position Z = "   << m_structLastPackedge.pos.z   << "mm;" << "/n" ;
+
         // Если они не равны маркеру
-        if( (m_structLastPackedge.marker == 0x00AA) && !m_bDataDtreamSync )
+        if( (m_structLastPackedge.marker == 0x00AA) && !m_bDataStreamSync )
         {
             // Если уже 5 пакетов без ошибок
             m_nPackageCounter++;
             if( m_nPackageCounter > 5 )
             {
                 // Отметить синхронизауию
-                m_bDataDtreamSync = true;
+                m_bDataStreamSync = true;
                 // Сменить состояние
                 m_eRecieverState = Connected;
             }
         }
         // Удалить обработанные элементы
-        m_oRecieveBuffer.remove( 0, (8*2) );
+        m_oRecieveBuffer.remove( 0, sizeof(m_structLastPackedge) );
     }
 
     // Опубликовать последние данные
-    emit newGiroDataSignal ( x, y, z, w );
+    emit imuDataUpdatedSignal ( );
+}
 
-    emit newAccelDataSignal( AccelX, AccelY, AccelZ );
-
-    // m_oRecieveBuffer.clear();
 }
 

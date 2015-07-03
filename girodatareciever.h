@@ -5,18 +5,23 @@
 #include <QTimer>
 #include <QDebug>
 
+#include "imudata.h"
+
+namespace LsdSlamIMU
+{
+
 // Время для таймера контроля состояния
 #define GIRO_DATA_STATE_TIME 500
 // Длинна пакета
 #define GIRO_DATA_PACET_SIZE 8
 
-class GiroDataReciever : public QSerialPort
+class IMUDataReciever : public QSerialPort
 {
     Q_OBJECT
 public:
     // Конструктор
-    GiroDataReciever();
-    ~GiroDataReciever();
+    IMUDataReciever();
+    ~IMUDataReciever();
 
 private:
     // Состояния системы
@@ -37,7 +42,7 @@ private:
     QList<QSerialPortInfo>  m_oPortList;
 
     // Флаг синхронизации данных
-    bool        m_bDataDtreamSync;
+    bool        m_bDataStreamSync;
     // Счетчик данных
     qint8       m_nPackageCounter;
 
@@ -47,21 +52,40 @@ private:
     // Структура пакета
     typedef struct
     {
-        quint16 marker; // маркерпакета
+        quint16 marker; // маркер пакета
 
-        qint16  w;
-        qint16  x;
-        qint16  y;
-        qint16  z;
-
-        qint16  accelX;
-        qint16  accelY;
-        qint16  accelZ;
+        struct
+        {
+            qint16  w;
+            qint16  x;
+            qint16  y;
+            qint16  z;
+        }qua;
+        struct
+        {
+            double  x;
+            double  y;
+            double  z;
+        }acc;
+        struct
+        {
+            double  x;
+            double  y;
+            double  z;
+        }vel;
+        struct
+        {
+            double  x;
+            double  y;
+            double  z;
+        }pos;
 
     }dataPackageStruct;
 
     // Экземпляр структуры
     dataPackageStruct m_structLastPackedge;
+
+    IMUData m_oIMUdata;
 
 protected slots:
     // Слот для контроля состояния модуля
@@ -72,10 +96,10 @@ protected slots:
 
 signals:
     // Сообщение о формировании новых данных
-    void    newGiroDataSignal( qreal x, qreal y, qreal z, qreal w);
-
-    void    newAccelDataSignal( qint16 x, qint16 y, qint16 z );
+    void    imuDataUpdatedSignal();
 
 };
+
+}
 
 #endif // GIRODATARECIEVER_H
